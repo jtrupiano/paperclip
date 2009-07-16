@@ -1,5 +1,15 @@
 require 'test/helper'
 
+def fake_shell_success
+  `echo harmless but necessary if you want to run this unit test all by its lonesome`
+end
+
+def fake_shell_error
+  `askldfjaskld`
+end
+
+fake_shell_success
+  
 class PaperclipTest < Test::Unit::TestCase
   [:image_magick_path, :convert_path].each do |path|
     context "Calling Paperclip.run with an #{path} specified" do
@@ -37,6 +47,28 @@ class PaperclipTest < Test::Unit::TestCase
       Paperclip.expects(:log).with("this is the command 2>/dev/null")
       Paperclip.expects(:"`").with("this is the command 2>/dev/null")
       Paperclip.run("this","is the command")
+    end
+    
+    context "and when the executable cannot be found on the path" do
+      setup do
+        fake_shell_error
+      end
+      
+      teardown do
+        fake_shell_success
+      end
+      
+      should "return error message describing absence of executable from the PATH" do
+        Paperclip.expects(:path_for_command).with("convert").returns("convert")
+        Paperclip.expects(:bit_bucket).returns("/dev/null")
+        Paperclip.expects(:"`").with("convert one.jpg two.jpg 2>/dev/null")
+        begin
+          Paperclip.run("convert", "one.jpg two.jpg")
+          assert false, "expected Paperclip::PaperclipCommandLineError to be raised"
+        rescue Paperclip::PaperclipCommandLineError => err
+          assert_match /^Unable to invoke convert/, err.message
+        end
+      end
     end
   end
 

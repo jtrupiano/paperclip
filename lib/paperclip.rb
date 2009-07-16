@@ -98,7 +98,8 @@ module Paperclip
       Paperclip.log(command) if Paperclip.options[:log_command]
       output = `#{command}`
       unless [expected_outcodes].flatten.include?($?.exitstatus)
-        raise PaperclipCommandLineError, "Error while running #{cmd}"
+        error = ($?.exitstatus == 127) ? "Unable to invoke #{cmd}, are you sure it's on your path?" : "Error while running #{cmd}"
+        raise PaperclipCommandLineError, error
       end
       output
     end

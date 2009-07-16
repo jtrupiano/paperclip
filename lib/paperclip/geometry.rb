@@ -17,8 +17,8 @@ module Paperclip
       file = file.path if file.respond_to? "path"
       geometry = begin
                    Paperclip.run("identify", %Q[-format "%wx%h" "#{file}"[0]])
-                 rescue PaperclipCommandLineError
-                   ""
+                 rescue PaperclipCommandLineError => err
+                   raise(NotIdentifiedByImageMagickError.new(err.message))
                  end
       parse(geometry) ||
         raise(NotIdentifiedByImageMagickError.new("#{file} is not recognized by the 'identify' command."))
